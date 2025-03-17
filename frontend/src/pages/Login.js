@@ -80,7 +80,7 @@ const Login = () => {
   };
 
   const backgroundStyle = {
-    backgroundImage: `url('/assets/${isMobile ? 'bg2.png' : 'bg.png'}')`,
+    backgroundImage: `url('${process.env.PUBLIC_URL}/assets/${isMobile ? 'bg2.png' : 'bg.png'}')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
@@ -224,4 +224,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;
