@@ -95,4 +95,4 @@ const LoadingScreen = ({ onLoadingComplete }) => {
   );
 };
 
-export default LoadingScreen; 
+export default LoadingScreen;

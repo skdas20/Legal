@@ -42,9 +42,13 @@ const PageBackground = ({ children }) => {
   // Determine which background image to use
   const getBackgroundImage = () => {
     if (isMobile) {
-      return isDarkMode ? '/assets/h1.png' : '/assets/h2.png';
+      return isDarkMode
+        ? `${process.env.PUBLIC_URL}/assets/h1.png`
+        : `${process.env.PUBLIC_URL}/assets/h2.png`;
     } else {
-      return isDarkMode ? '/assets/Home2.png' : '/assets/Home.png';
+      return isDarkMode
+        ? `${process.env.PUBLIC_URL}/assets/Home2.png`
+        : `${process.env.PUBLIC_URL}/assets/Home.png`;
     }
   };
 
@@ -63,4 +67,4 @@ const PageBackground = ({ children }) => {
   );
 };
 
-export default PageBackground; 
+export default PageBackground;
