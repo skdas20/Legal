@@ -63,7 +63,9 @@ const LoadingScreen = ({ onLoadingComplete }) => {
     return null;
   }
 
-  const videoSrc = isMobile ? '/assets/Load2.mp4' : '/assets/Load.mp4';
+  const videoSrc = isMobile 
+    ? `${process.env.PUBLIC_URL}/assets/Load2.mp4` 
+    : `${process.env.PUBLIC_URL}/assets/Load.mp4`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
