@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/repository-name/static/css/main.62931dc3.css",
-    "main.js": "/repository-name/static/js/main.fcdf3f95.js",
-    "static/js/977.606e3c37.chunk.js": "/repository-name/static/js/977.606e3c37.chunk.js",
-    "static/js/732.3fc403c8.chunk.js": "/repository-name/static/js/732.3fc403c8.chunk.js",
-    "index.html": "/repository-name/index.html",
-    "main.62931dc3.css.map": "/repository-name/static/css/main.62931dc3.css.map",
-    "main.fcdf3f95.js.map": "/repository-name/static/js/main.fcdf3f95.js.map",
-    "732.3fc403c8.chunk.js.map": "/repository-name/static/js/732.3fc403c8.chunk.js.map"
+    "main.css": "/Legal/static/css/main.62931dc3.css",
+    "main.js": "/Legal/static/js/main.ad8b29d4.js",
+    "static/js/977.606e3c37.chunk.js": "/Legal/static/js/977.606e3c37.chunk.js",
+    "static/js/732.3fc403c8.chunk.js": "/Legal/static/js/732.3fc403c8.chunk.js",
+    "index.html": "/Legal/index.html",
+    "main.62931dc3.css.map": "/Legal/static/css/main.62931dc3.css.map",
+    "main.ad8b29d4.js.map": "/Legal/static/js/main.ad8b29d4.js.map",
+    "732.3fc403c8.chunk.js.map": "/Legal/static/js/732.3fc403c8.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.62931dc3.css",
-    "static/js/main.fcdf3f95.js"
+    "static/js/main.ad8b29d4.js"
   ]
 }
