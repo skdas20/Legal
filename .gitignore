@@ -1,0 +1,76 @@
+# Dependencies
+node_modules/
+/node_modules
+/.pnp
+.pnp.js
+
+# Build outputs
+/build
+/dist
+/frontend/build
+/backend/build
+
+# Cache directories
+.cache/
+/frontend/.cache/
+/frontend/node_modules/.cache/
+**/.cache/
+**/.cache/**
+**/node_modules/.cache/**
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Temporary files
+.temp/
+.tmp/
+tmp/
+temp/
+
+# Next.js
+.next/
+.nuxt/
+
+# Testing
+/coverage
+
+# Large files and media
+*.mp4
+*.mov
+*.avi
+*.wmv
+*.flv
+*.pack
+*.old
+*.bundle
+
+# Specific large cache files
+**/default-development/*.pack
+**/default-development/13.pack
+**/default-development/0.pack
+**/default-development/1.pack
+**/default-development/2.pack
+**/default-development/3.pack
+**/default-development/4.pack
+
+# Misc
+.DS_Store
