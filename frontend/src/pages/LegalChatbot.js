@@ -193,30 +193,62 @@ const LegalChatbot = () => {
     setTypingComplete(true);
     
     try {
+      console.log('Submitting chat message:', input);
+      console.log('Sending request to Railway API');
       const response = await aiAPI.chat(input);
+      console.log('Chat response received from Railway:', response);
       
-      if (response.data.success) {
-        const assistantResponse = response.data.data.response;
-        setTypingComplete(false);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: assistantResponse,
-          isTyping: true
-        }]);
+      // Process the response
+      let assistantResponse = "I'm having trouble processing your request right now.";
+      
+      if (response && response.data) {
+        console.log('Response data structure:', JSON.stringify(response.data));
         
-        // If voice chat is active, speak the response
-        if (voiceChatActive) {
-          // Wait for typing effect to complete before speaking
-          setTimeout(() => {
-            speakResponse(assistantResponse);
-          }, 500);
+        if (response.data.success && response.data.data && response.data.data.response) {
+          console.log('Found valid response structure');
+          assistantResponse = response.data.data.response;
+        } else if (typeof response.data === 'string') {
+          console.log('Response is a string');
+          assistantResponse = response.data;
+        } else if (typeof response.data === 'object') {
+          console.log('Response is an object without standard structure');
+          assistantResponse = JSON.stringify(response.data);
         }
       } else {
-        setError('Failed to get response. Please try again.');
+        console.log('No valid response data received');
+      }
+      
+      console.log('Setting assistant response:', assistantResponse);
+      setTypingComplete(false);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: assistantResponse,
+        isTyping: true
+      }]);
+      
+      // If voice chat is active, speak the response
+      if (voiceChatActive) {
+        // Wait for typing effect to complete before speaking
+        setTimeout(() => {
+          speakResponse(assistantResponse);
+        }, 500);
       }
     } catch (err) {
-      console.error('Error in chat:', err);
-      setError('An error occurred. Please try again later.');
+      console.error('Error in chat submission:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        response: err.response
+      });
+      
+      setError('An error occurred while connecting to the backend. Please try again later.');
+      
+      // Add a fallback response
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "I'm having technical difficulties right now. Please try again later.",
+        isTyping: false
+      }]);
     } finally {
       setLoading(false);
     }

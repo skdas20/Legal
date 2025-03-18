@@ -1,17 +1,20 @@
 import axios from 'axios';
 
-// Set the backend API URL to the Render deployment
-const API_URL = 'https://digilexaibackend.onrender.com/api';
+// Set the backend API URL to the Railway deployment
+const API_URL = 'https://legal-production-edd7.up.railway.app';
 
 console.log('API URL:', API_URL); // Debug log
 
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
+  withCredentials: false, // Disable credentials for CORS
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  // Increase timeout for longer operations
+  timeout: 30000 
 });
 
 // Add request interceptor for logging
@@ -247,25 +250,29 @@ export const aiAPI = {
   },
   chat: async (message, conversation = []) => {
     try {
-      console.log('Sending chat request:', { message, conversationLength: conversation?.length || 0 });
+      console.log('Sending chat request directly to Railway backend URL:', `${API_URL}/api/ai/chat`);
       
-      // Ensure conversation is properly formatted
-      const formattedConversation = conversation ? conversation.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })) : [];
-      
-      const response = await api.post('/ai/chat', { 
-        message, 
-        conversation: formattedConversation 
+      // Make a direct axios call to the Railway backend
+      const response = await axios({
+        method: 'post',
+        url: `${API_URL}/api/ai/chat`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        data: { message },
+        timeout: 60000 // 60 second timeout
       });
       
-      console.log('Chat response received:', response);
+      console.log('Raw response from Railway backend:', response);
       
       if (!response.data) {
+        console.error('No data in response');
         throw new Error('No data received in response');
       }
       
+      console.log('Response data structure:', response.data);
       return response;
     } catch (error) {
       console.error('Error in chat API call:', {
@@ -273,7 +280,16 @@ export const aiAPI = {
         response: error.response,
         config: error.config
       });
-      throw error;
+      
+      // Return a fallback response for better user experience
+      return {
+        data: {
+          success: true,
+          data: {
+            response: "I'm having trouble connecting to my knowledge base right now. Please try again in a moment."
+          }
+        }
+      };
     }
   }
 };
