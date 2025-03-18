@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL;
+// Set the backend API URL to the Render deployment
+const API_URL = 'https://digilexaibackend.onrender.com/api';
 
 console.log('API URL:', API_URL); // Debug log
 
