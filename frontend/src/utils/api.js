@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Set the backend API URL to the Railway deployment
-const API_URL = 'https://legal-production-edd7.up.railway.app';
+const API_URL = 'https://legal-production-edd7.up.railway.app/api';
 
 console.log('API URL:', API_URL); // Debug log
 
@@ -250,29 +250,26 @@ export const aiAPI = {
   },
   chat: async (message, conversation = []) => {
     try {
-      console.log('Sending chat request directly to Railway backend URL:', `${API_URL}/api/ai/chat`);
+      console.log('Sending chat request to:', `${API_URL}/ai/chat`);
       
-      // Make a direct axios call to the Railway backend
-      const response = await axios({
-        method: 'post',
-        url: `${API_URL}/api/ai/chat`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        data: { message },
-        timeout: 60000 // 60 second timeout
+      // Ensure conversation is properly formatted
+      const formattedConversation = conversation ? conversation.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })) : [];
+      
+      // Use the api instance with the correct endpoint
+      const response = await api.post('/ai/chat', { 
+        message, 
+        conversation: formattedConversation 
       });
       
-      console.log('Raw response from Railway backend:', response);
+      console.log('Chat response received:', response);
       
       if (!response.data) {
-        console.error('No data in response');
         throw new Error('No data received in response');
       }
       
-      console.log('Response data structure:', response.data);
       return response;
     } catch (error) {
       console.error('Error in chat API call:', {
