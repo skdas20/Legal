@@ -10,4 +10,4 @@ Please visit the site live at - https://skdas20.github.io/Legal/
 # backend:-
    cd backend
    npm install
-   npm run dev'''
+   npm run dev
