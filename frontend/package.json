@@ -13,10 +13,11 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.30.0",
     "react-scripts": "5.0.1",
+    "serve": "^14.2.0",
+    "tesseract.js": "^6.0.0",
     "three": "^0.174.0",
     "web-vitals": "^2.1.4",
-    "web3": "^4.16.0",
-    "serve": "^14.2.0"
+    "web3": "^4.16.0"
   },
   "scripts": {
     "start": "react-app-rewired start",
@@ -25,7 +26,7 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "serve": "serve -s build" 
+    "serve": "serve -s build"
   },
   "eslintConfig": {
     "extends": [

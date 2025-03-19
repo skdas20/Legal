@@ -73,6 +73,8 @@ const ContractReviewer = () => {
     e.preventDefault();
     setError('');
     setReview(null);
+    setExtractedText('');
+    setShowExtractedText(true);
     setLoading(true);
 
     try {
@@ -106,23 +108,23 @@ const ContractReviewer = () => {
           return;
         }
         
-        try {
-          // First try the backend API
-          response = await aiAPI.reviewContractImage(uploadedImage);
-        } catch (backendError) {
-          console.error('Backend API failed, trying direct API:', backendError);
-          // If backend fails, try direct API
-          response = await directGeminiAPI.reviewContractImage(uploadedImage);
-        }
+        console.log('Processing contract image...');
+        
+        // For image processing, we'll directly use the improved aiAPI method
+        // which now has built-in fallback to client-side processing
+        response = await aiAPI.reviewContractImage(uploadedImage);
+        console.log('Contract image analysis completed');
       }
 
-      if (response.data && response.data.success) {
+      if (response && response.data && response.data.success) {
         setReview(response.data.data);
         if (response.data.data.extractedText) {
           setExtractedText(response.data.data.extractedText);
+          setShowExtractedText(true);
         }
       } else {
-        setError((response.data && response.data.message) || 'Failed to review contract. Please try again.');
+        console.error('Invalid API response:', response);
+        setError('Failed to review contract. Received invalid response from the server.');
       }
     } catch (err) {
       console.error('Error reviewing contract:', err);
@@ -181,17 +183,88 @@ TENANT: Amit Singh`;
   const renderReview = () => {
     if (!review) return null;
   
-  return (
+    return (
       <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-xl p-6 mt-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Contract Analysis</h2>
+        
+        {inputMethod === 'image' && (
+          <div className="mb-6">
+            {review.localProcessing && (
+              <div className="mb-4 p-4 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-medium">Local Processing Mode</span>
+                </div>
+                <p className="mt-2 text-sm">
+                  The analysis was performed locally due to backend connectivity issues. Limited features are available in this mode.
+                </p>
+              </div>
+            )}
+            
+            {review.documentId && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Document ID: {review.documentId}
+              </p>
+            )}
+            
+            {review.processingTime && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Processing time: {(review.processingTime / 1000).toFixed(2)} seconds
+              </p>
+            )}
+            
+            {review.ocrStatus && (
+              <div className={`mb-4 p-4 rounded-md ${
+                review.ocrStatus === 'complete' 
+                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                  : review.ocrStatus === 'partial'
+                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+                  : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+              }`}>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${
+                    review.ocrStatus === 'complete' 
+                      ? 'text-green-500'
+                      : review.ocrStatus === 'partial'
+                      ? 'text-yellow-500'
+                      : 'text-red-500'
+                  }`} viewBox="0 0 20 20" fill="currentColor">
+                    {review.ocrStatus === 'complete' ? (
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    ) : review.ocrStatus === 'partial' ? (
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    ) : (
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    )}
+                  </svg>
+                  <span className="font-medium">
+                    {review.ocrStatus === 'complete' 
+                      ? 'Document analysis completed successfully'
+                      : review.ocrStatus === 'partial'
+                      ? 'Partial document analysis completed'
+                      : 'Document analysis failed'}
+                  </span>
+                </div>
+                {review.ocrWarning && (
+                  <p className="mt-2 text-sm">{review.ocrWarning}</p>
+                )}
+                {review.error && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">Error: {review.error}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         
         {review.summary && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Summary</h3>
             <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{review.summary}</p>
-                </div>
-              )}
-              
+          </div>
+        )}
+        
         {review.risks && review.risks.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Potential Risks</h3>
@@ -202,9 +275,9 @@ TENANT: Amit Singh`;
                 </li>
               ))}
             </ul>
-                  </div>
-                )}
-                
+          </div>
+        )}
+        
         {review.clarifications && review.clarifications.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Clarifications Needed</h3>
@@ -212,27 +285,27 @@ TENANT: Amit Singh`;
               {review.clarifications.map((item, index) => (
                 <li key={index} className="text-yellow-600 dark:text-yellow-400">
                   <span className="text-gray-700 dark:text-gray-300">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {review.bestPractices && review.bestPractices.length > 0 && (
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {review.bestPractices && review.bestPractices.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Best Practices</h3>
             <ul className="list-disc pl-5 space-y-2">
-                      {review.bestPractices.map((practice, index) => (
+              {review.bestPractices.map((practice, index) => (
                 <li key={index} className="text-green-600 dark:text-green-400">
                   <span className="text-gray-700 dark:text-gray-300">{practice}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         {review.finalAdvice && (
-                  <div>
+          <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Final Advice</h3>
             <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{review.finalAdvice}</p>
           </div>
@@ -248,15 +321,18 @@ TENANT: Amit Singh`;
               >
                 {showExtractedText ? 'Hide' : 'Show'} Extracted Text
               </button>
-                            </div>
-            {showExtractedText && (
-              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md">
-                <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{extractedText}</pre>
-                              </div>
-            )}
-                                </div>
-                              )}
-                            </div>
+            </div>
+            
+            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md mt-2 border border-gray-200 dark:border-gray-700">
+              {extractedText ? (
+                <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap overflow-auto max-h-96">{extractedText}</pre>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 italic">No text was extracted from the image.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -291,7 +367,7 @@ TENANT: Amit Singh`;
               >
                 Image Upload
               </button>
-                          </div>
+            </div>
             
             <form onSubmit={handleSubmit}>
               {inputMethod === 'text' ? (
@@ -331,12 +407,12 @@ TENANT: Amit Singh`;
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
                         </button>
-              </div>
-            ) : (
+                      </div>
+                    ) : (
                       <>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                        </svg>
                         <p className="text-gray-600 dark:text-gray-400 mb-2">Click or drag and drop to upload a contract image</p>
                         <p className="text-xs text-gray-500 dark:text-gray-500">PNG, JPG, or PDF up to 5MB</p>
                         <input
@@ -362,8 +438,8 @@ TENANT: Amit Singh`;
               {error && (
                 <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md">
                   {error}
-              </div>
-            )}
+                </div>
+              )}
               
               <button
                 type="submit"
