@@ -1,4 +1,4 @@
-Please visit the site live at - https://skdas20.github.io/Legal/
+Please visit the site live at - https://digilexai.vercel.app/
 
 
 # To Run the Application Locally-
