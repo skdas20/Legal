@@ -73,8 +73,6 @@ const ContractReviewer = () => {
     e.preventDefault();
     setError('');
     setReview(null);
-    setExtractedText('');
-    setShowExtractedText(true);
     setLoading(true);
 
     try {
@@ -108,23 +106,23 @@ const ContractReviewer = () => {
           return;
         }
         
-        console.log('Processing contract image...');
-        
-        // For image processing, we'll directly use the improved aiAPI method
-        // which now has built-in fallback to client-side processing
-        response = await aiAPI.reviewContractImage(uploadedImage);
-        console.log('Contract image analysis completed');
+        try {
+          // First try the backend API
+          response = await aiAPI.reviewContractImage(uploadedImage);
+        } catch (backendError) {
+          console.error('Backend API failed, trying direct API:', backendError);
+          // If backend fails, try direct API
+          response = await directGeminiAPI.reviewContractImage(uploadedImage);
+        }
       }
 
-      if (response && response.data && response.data.success) {
+      if (response.data && response.data.success) {
         setReview(response.data.data);
         if (response.data.data.extractedText) {
           setExtractedText(response.data.data.extractedText);
-          setShowExtractedText(true);
         }
       } else {
-        console.error('Invalid API response:', response);
-        setError('Failed to review contract. Received invalid response from the server.');
+        setError((response.data && response.data.message) || 'Failed to review contract. Please try again.');
       }
     } catch (err) {
       console.error('Error reviewing contract:', err);
@@ -187,73 +185,40 @@ TENANT: Amit Singh`;
       <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-xl p-6 mt-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Contract Analysis</h2>
         
-        {inputMethod === 'image' && (
-          <div className="mb-6">
-            {review.localProcessing && (
-              <div className="mb-4 p-4 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md">
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span className="font-medium">Local Processing Mode</span>
-                </div>
-                <p className="mt-2 text-sm">
-                  The analysis was performed locally due to backend connectivity issues. Limited features are available in this mode.
-                </p>
-              </div>
-            )}
-            
-            {review.documentId && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Document ID: {review.documentId}
-              </p>
-            )}
-            
-            {review.processingTime && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Processing time: {(review.processingTime / 1000).toFixed(2)} seconds
-              </p>
-            )}
-            
-            {review.ocrStatus && (
-              <div className={`mb-4 p-4 rounded-md ${
+        {inputMethod === 'image' && review.ocrStatus && (
+          <div className={`mb-6 p-4 rounded-md ${
+            review.ocrStatus === 'complete' 
+              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+              : review.ocrStatus === 'partial'
+              ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
+              : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+          }`}>
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${
                 review.ocrStatus === 'complete' 
-                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                  ? 'text-green-500'
                   : review.ocrStatus === 'partial'
-                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-                  : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-              }`}>
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${
-                    review.ocrStatus === 'complete' 
-                      ? 'text-green-500'
-                      : review.ocrStatus === 'partial'
-                      ? 'text-yellow-500'
-                      : 'text-red-500'
-                  }`} viewBox="0 0 20 20" fill="currentColor">
-                    {review.ocrStatus === 'complete' ? (
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    ) : review.ocrStatus === 'partial' ? (
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    ) : (
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    )}
-                  </svg>
-                  <span className="font-medium">
-                    {review.ocrStatus === 'complete' 
-                      ? 'Document analysis completed successfully'
-                      : review.ocrStatus === 'partial'
-                      ? 'Partial document analysis completed'
-                      : 'Document analysis failed'}
-                  </span>
-                </div>
-                {review.ocrWarning && (
-                  <p className="mt-2 text-sm">{review.ocrWarning}</p>
+                  ? 'text-yellow-500'
+                  : 'text-red-500'
+              }`} viewBox="0 0 20 20" fill="currentColor">
+                {review.ocrStatus === 'complete' ? (
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                ) : review.ocrStatus === 'partial' ? (
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                ) : (
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 )}
-                {review.error && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">Error: {review.error}</p>
-                )}
-              </div>
+              </svg>
+              <span className="font-medium">
+                {review.ocrStatus === 'complete' 
+                  ? 'Text extraction completed successfully'
+                  : review.ocrStatus === 'partial'
+                  ? 'Partial text extraction completed'
+                  : 'Text extraction failed'}
+              </span>
+            </div>
+            {review.ocrWarning && (
+              <p className="mt-2 text-sm">{review.ocrWarning}</p>
             )}
           </div>
         )}
@@ -322,14 +287,11 @@ TENANT: Amit Singh`;
                 {showExtractedText ? 'Hide' : 'Show'} Extracted Text
               </button>
             </div>
-            
-            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md mt-2 border border-gray-200 dark:border-gray-700">
-              {extractedText ? (
-                <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap overflow-auto max-h-96">{extractedText}</pre>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 italic">No text was extracted from the image.</p>
-              )}
-            </div>
+            {showExtractedText && (
+              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md">
+                <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{extractedText}</pre>
+              </div>
+            )}
           </div>
         )}
       </div>
