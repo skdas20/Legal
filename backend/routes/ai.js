@@ -48,10 +48,12 @@ router.post('/echo', (req, res) => {
   }
 });
 
-// Protected routes
+// Make these routes public for testing with Vercel deployment
+router.post('/review-contract', reviewContract);
+router.post('/review-contract-image', reviewContractImage);
+router.post('/chat', chat);
+
+// Protected routes - only the document generation requires auth
 router.post('/generate-document', protect, generateDocument);
-router.post('/review-contract', protect, reviewContract);
-router.post('/review-contract-image', protect, reviewContractImage);
-router.post('/chat', protect, chat);
 
 module.exports = router; 

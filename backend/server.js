@@ -39,11 +39,14 @@ if (process.env.NODE_ENV === 'development') {
 
 // Enable CORS with specific options
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://digilexai-3ojib7y81-sumit-s-projects-bda037af.vercel.app', 'https://skdas20.github.io', 'https://digilexai.vercel.app', '*'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 }));
+
+// Add a pre-flight OPTIONS handler for all routes
+app.options('*', cors());
 
 // Mount routers
 app.use('/api/auth', auth);

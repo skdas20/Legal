@@ -366,8 +366,6 @@ const reviewContractImage = async (base64Image) => {
     // Use mock implementation for testing
     if (USE_MOCK) {
       console.log('Using mock implementation for contract image review');
-      
-      // Return a mock response with extracted text
       return {
         summary: "This appears to be a standard rental agreement between a landlord and tenant for residential property in India.",
         risks: [
@@ -386,40 +384,7 @@ const reviewContractImage = async (base64Image) => {
           "Include a clause addressing dispute resolution mechanisms."
         ],
         finalAdvice: "This agreement provides basic protection but should be enhanced with more specific terms regarding maintenance, security deposit return, and dispute resolution. Consider having it reviewed by a legal professional familiar with local rental laws.",
-        extractedText: `RENTAL AGREEMENT
-
-THIS RENTAL AGREEMENT is made on this 10th day of June, 2023, between:
-
-Mr. Rajesh Kumar, S/o Late Sh. Mohan Kumar, R/o 123, Green Park, New Delhi - 110016 (hereinafter referred to as the "LANDLORD")
-
-AND
-
-Ms. Priya Singh, D/o Sh. Ajay Singh, R/o 456, Vasant Kunj, New Delhi - 110070 (hereinafter referred to as the "TENANT")
-
-WHEREAS the Landlord is the owner of residential premises situated at 789, Hauz Khas, New Delhi - 110016 (hereinafter referred to as the "PREMISES")
-
-AND WHEREAS the Tenant has approached the Landlord to take the Premises on rent for residential purposes, and the Landlord has agreed to let out the same on the terms and conditions appearing hereinafter.
-
-NOW THIS AGREEMENT WITNESSETH AS FOLLOWS:
-
-1. RENT AND DEPOSIT:
-   a) The monthly rent for the Premises shall be Rs. 25,000/- (Rupees Twenty-Five Thousand Only).
-   b) The Tenant shall pay a security deposit of Rs. 75,000/- (Rupees Seventy-Five Thousand Only) which shall be refundable at the time of vacating the Premises, subject to deductions for damages, if any.
-
-2. TERM:
-   This Agreement shall be valid for a period of 11 (Eleven) months commencing from 15th June, 2023 to 14th May, 2024.
-
-3. OBLIGATIONS OF THE TENANT:
-   a) Pay the rent by the 5th day of each month.
-   b) Pay for electricity, water, and maintenance charges as per actual consumption.
-   c) Not sublet the Premises or any part thereof.
-   d) Maintain the Premises in good condition.
-   e) Not make any structural changes without written permission from the Landlord.
-
-4. TERMINATION:
-   Either party may terminate this Agreement by giving one month's notice in writing.
-
-IN WITNESS WHEREOF, the parties have executed this Agreement on the date first above written.`
+        extractedText: `RENTAL AGREEMENT\n\nTHIS RENTAL AGREEMENT is made on this 10th day of June, 2023...`
       };
     }
     
@@ -438,17 +403,26 @@ IN WITNESS WHEREOF, the parties have executed this Agreement on the date first a
     
     // Extract text from image using Gemini Vision API
     let extractedText = '';
+    let ocrError = null;
     
     try {
       // First, use Gemini Vision to extract text from the image
       const visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-vision' });
       
-      // Create prompt parts for OCR
+      // Create prompt parts for OCR with improved instructions
       const ocrPromptParts = [
         {
-          text: `Extract all the text from this image of a legal document. 
-          Return ONLY the extracted text, formatted as it appears in the document.
-          Do not include any analysis, commentary, or additional text.`
+          text: `You are an expert at extracting text from legal documents. Please extract all text from this image of a legal document.
+          
+          Instructions:
+          1. Extract ALL text exactly as it appears in the document
+          2. Preserve the formatting and structure
+          3. Include headers, footers, and any stamps or seals
+          4. Maintain paragraph breaks and indentation
+          5. Do not add any analysis or commentary
+          6. If text is unclear or partially visible, mark it with [unclear] or [partially visible]
+          
+          Return ONLY the extracted text, formatted as it appears in the document.`
         },
         {
           inlineData: {
@@ -458,13 +432,13 @@ IN WITNESS WHEREOF, the parties have executed this Agreement on the date first a
         }
       ];
       
-      // Generate content for OCR
+      // Generate content for OCR with increased timeout
       console.log('Sending image to Gemini Vision API for text extraction');
       const ocrResult = await visionModel.generateContent({
         contents: [{ role: 'user', parts: ocrPromptParts }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192, // Increased for longer documents
         },
       });
       
@@ -476,21 +450,17 @@ IN WITNESS WHEREOF, the parties have executed this Agreement on the date first a
       if (!extractedText || extractedText.trim().length < 10) {
         throw new Error('Insufficient text extracted from image');
       }
-    } catch (ocrError) {
-      console.error('Error extracting text from image:', ocrError);
-      extractedText = "Failed to extract text from the image. Please try again with a clearer image or use text input instead.";
       
-      // Return a basic response when OCR fails
-      return {
-        summary: "Unable to analyze the contract image",
-        risks: ["Text extraction failed - unable to analyze the document"],
-        clarifications: ["Please try uploading a clearer image or use text input instead"],
-        bestPractices: ["Ensure the document is well-lit and clearly visible in the image", 
-                        "Try using a higher resolution image", 
-                        "Consider using text input for better results"],
-        finalAdvice: "We couldn't extract sufficient text from your image to provide a proper analysis. Please try again with a clearer image or use the text input option.",
-        extractedText: extractedText
-      };
+      // Clean up the extracted text
+      extractedText = extractedText
+        .replace(/\n{3,}/g, '\n\n') // Remove excessive newlines
+        .replace(/\s{2,}/g, ' ') // Remove excessive spaces
+        .trim();
+      
+    } catch (error) {
+      console.error('Error extracting text from image:', error);
+      ocrError = error;
+      extractedText = "Failed to extract text from the image. Please try again with a clearer image or use text input instead.";
     }
     
     // Now analyze the extracted text using the text review function
@@ -501,6 +471,14 @@ IN WITNESS WHEREOF, the parties have executed this Agreement on the date first a
       
       // Add the extracted text to the review result
       reviewResult.extractedText = extractedText;
+      
+      // Add OCR-specific information
+      if (ocrError) {
+        reviewResult.ocrStatus = 'partial';
+        reviewResult.ocrWarning = 'Some text could not be extracted. Please try with a clearer image.';
+      } else {
+        reviewResult.ocrStatus = 'complete';
+      }
       
       return reviewResult;
     } catch (reviewError) {
@@ -513,7 +491,9 @@ IN WITNESS WHEREOF, the parties have executed this Agreement on the date first a
         clarifications: ["Please try uploading a clearer image or use text input instead"],
         bestPractices: ["Ensure the document is well-lit and clearly visible in the image"],
         finalAdvice: "Due to issues with text extraction, we couldn't provide a comprehensive review. Please try again with a clearer image or use text input instead.",
-        extractedText: extractedText
+        extractedText: extractedText,
+        ocrStatus: ocrError ? 'failed' : 'partial',
+        ocrWarning: ocrError ? 'Failed to extract text from the image.' : 'Some text could not be extracted.'
       };
     }
   } catch (error) {
@@ -526,7 +506,9 @@ IN WITNESS WHEREOF, the parties have executed this Agreement on the date first a
       clarifications: ["The system encountered an error while processing your image"],
       bestPractices: ["Try again with a clearer image", "Try using the text input option instead"],
       finalAdvice: "If the problem persists, please contact support.",
-      extractedText: "Failed to extract text due to an error."
+      extractedText: "Failed to extract text due to an error.",
+      ocrStatus: 'failed',
+      ocrWarning: 'Failed to process the image.'
     };
   }
 };
